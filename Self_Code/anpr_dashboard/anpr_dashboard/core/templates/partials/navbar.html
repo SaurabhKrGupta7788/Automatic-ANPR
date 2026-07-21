@@ -1,0 +1,64 @@
+<div class="flex items-center gap-6 h-16 min-h-16 max-h-16 flex-shrink-0">
+
+    <div class="text-slate-400 text-sm font-mono leading-none" id="clock">00:00:00</div>
+
+    <a href="{% url 'landing' %}"
+       class="flex items-center h-full {% if request.resolver_match.url_name == 'landing' %}text-green-400 border-b-2 border-green-400{% else %}text-slate-400 hover:text-green-400{% endif %}">
+       HOME
+    </a>
+
+    <a href="{% url 'multicamera_dashboard' %}"
+       class="flex items-center h-full {% if request.resolver_match.url_name == 'multicamera_dashboard' %}text-green-400 border-b-2 border-green-400{% else %}text-slate-400 hover:text-green-400{% endif %}">
+       MULTICAMERA
+    </a>
+
+    <a href="{% url 'master_dashboard' %}"
+       class="flex items-center h-full {% if request.resolver_match.url_name == 'master_dashboard' %}text-green-400 border-b-2 border-green-400{% else %}text-slate-400 hover:text-green-400{% endif %}">
+       DASHBOARD
+    </a>
+
+    <a href="{% url 'forensic_dashboard' %}"
+       class="flex items-center h-full {% if request.resolver_match.url_name == 'forensic_dashboard' %}text-green-400 border-b-2 border-green-400{% else %}text-slate-400 hover:text-green-400{% endif %}">
+       FORENSICS
+    </a>
+
+    {% if request.path == '/dashboard/' or request.path == '/multicamera/' %}
+    <!-- WEATHER SWITCHES -->
+    <div class="flex items-center gap-4 ml-2 h-full">
+
+        <div class="flex items-center gap-1">
+            <label class="switch">
+                <input type="checkbox" id="btn-nightday">
+                <span class="slider"></span>
+            </label>
+            <span class="nav-label">Night→Day</span>
+        </div>
+
+        <div class="flex items-center gap-1">
+            <label class="switch">
+                <input type="checkbox" id="btn-defog">
+                <span class="slider"></span>
+            </label>
+            <span class="nav-label">Defog</span>
+        </div>
+
+        <div class="flex items-center gap-1">
+            <label class="switch">
+                <input type="checkbox" id="btn-derain">
+                <span class="slider"></span>
+            </label>
+            <span class="nav-label">Derain</span>
+        </div>
+
+    </div>
+    {% endif %}
+
+</div>
+
+
+<script>
+setInterval(()=>{
+    const el = document.getElementById("clock");
+    if(el) el.innerText = new Date().toLocaleTimeString();
+},1000);
+</script>

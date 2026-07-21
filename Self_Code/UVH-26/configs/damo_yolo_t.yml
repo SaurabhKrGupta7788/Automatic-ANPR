@@ -1,0 +1,38 @@
+# ====================================================
+# Model Configuration Overrides for DAMOYOLO TinyNAS L20
+# ====================================================
+
+miscs:
+  eval_interval_epochs: 1 # ↓ from 10
+  ckpt_interval_epochs: 1 # ↓ from 10
+
+train:
+  batch_size: 16 # ↓ from 256
+  total_epochs: 150 # Added
+  train.resume_path: "/path/to/checkpoint.pth" # set to null when starting training
+  train.finetune_path: "/path/to/base_model.pth" # set to null when resuming training
+
+dataset:
+  train_ann:
+    - path/to/dataset/train
+  val_ann:
+    - path/to/dataset/val
+  class_names:
+    - Hatchback
+    - Sedan
+    - SUV
+    - MUV
+    - Bus
+    - Truck
+    - Three-wheeler
+    - Two-wheeler
+    - LCV
+    - Mini-bus
+    - tempo-traveller
+    - bicycle
+    - Vans
+    - Others
+
+model:
+  head:
+    num_classes: 14 # ↓ from 80

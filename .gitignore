@@ -1,0 +1,8 @@
+
+*.pth
+*.pt
+*.zip
+
+
+stereofog_images*
+

@@ -1,0 +1,59 @@
+# ====================================================
+# Model Configuration Overrides for YOLOv11 X
+# ====================================================
+
+# Model checkpoint to start from
+model: "/path/to/last.pt"
+
+# Dataset configuration
+train: "/path/to/train/images"
+val: "/path/to/val/images"
+nc: 14
+names:
+  0: "Hatchback"
+  1: "Sedan"
+  2: "SUV"
+  3: "MUV"
+  4: "Bus"
+  5: "Truck"
+  6: "Three-wheeler"
+  7: "Two-wheeler"
+  8: "LCV"
+  9: "Mini-bus"
+  10: "tempo-traveller"
+  11: "bicycle"
+  12: "Van"
+  13: "Others"
+
+# Hardware
+device: [0, 1]
+seed: 42
+
+# Training hyperparameters
+epochs: 150
+batch: 16
+imgsz: 640
+optimizer: AdamW
+cos_lr: true
+amp: false
+resume: true
+
+# Augmentation
+mosaic: 0.0
+mixup: 0.0
+auto_augment: null
+flipud: 0.0
+degrees: 0.0
+shear: 0.0
+perspective: 0.0
+
+# Early stopping
+patience: 150
+
+# Saving
+save: true
+save_period: 1
+
+# Logging and experiment naming
+project: project
+name: name

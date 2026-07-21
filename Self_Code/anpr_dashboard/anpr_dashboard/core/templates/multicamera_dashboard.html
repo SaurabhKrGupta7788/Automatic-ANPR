@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CODING MASTERS | CAMERA WALL</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+{% load static %}
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap');
+
+body { font-family:'Rajdhani',sans-serif;background:#0f172a; }
+.cyber-font { font-family:'Orbitron',sans-serif; }
+
+.cam-card{
+    background:#020617;
+    border:1px solid #334155;
+    border-radius:12px;
+    overflow:hidden;
+    position:relative;
+    transition:.25s;
+}
+
+.cam-card:hover{
+    border-color:#22c55e;
+    box-shadow:0 0 18px rgba(34,197,94,.35);
+    transform:translateY(-3px);
+}
+
+.cam-label{
+    position:absolute;
+    top:8px;
+    left:8px;
+    background:rgba(0,0,0,.7);
+    padding:3px 8px;
+    font-size:11px;
+    border-radius:6px;
+    backdrop-filter:blur(4px);
+}
+
+.cam-status::before{
+    content:"●";
+    margin-right:4px;
+}
+
+.online{ color:#22c55e; }
+.offline{ color:#ef4444; }
+
+.cam-footer{
+    position:absolute;
+    bottom:0;
+    left:0;
+    right:0;
+    background:rgba(2,6,23,.85);
+    padding:6px 8px;
+    font-size:11px;
+    display:flex;
+    justify-content:space-between;
+    border-top:1px solid #334155;
+}
+
+.cam-feed{
+    height:180px;
+}
+
+main > .cam-card {
+    height: 100%;
+}
+
+
+/* Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 18px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 20px;
+  transition: .25s;
+}
+
+.slider:before {
+  content: "";
+  position: absolute;
+  height: 14px;
+  width: 14px;
+  left: 2px;
+  top: 1px;
+  background: #94a3b8;
+  border-radius: 50%;
+  transition: .25s;
+}
+
+.switch input:checked + .slider {
+  background: rgba(34,197,94,.15);
+  border-color: #22c55e;
+  box-shadow: 0 0 6px rgba(34,197,94,.6);
+}
+
+.switch input:checked + .slider:before {
+  transform: translateX(18px);
+  background: #22c55e;
+}
+
+.nav-label{  
+  font-size:11px;
+  color:#94a3b8;
+  margin-right:6px;
+}
+
+main {
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+}
+
+</style>
+</head>
+
+<body class="text-slate-200 h-screen min-h-screen flex flex-col overflow-hidden">
+
+<!-- HEADER -->
+<header class="h-16 min-h-16 max-h-16 flex-shrink-0 bg-slate-900 border-b border-slate-700 flex items-center justify-between px-6 shadow-lg z-10">
+
+
+    <div class="flex items-center gap-3">
+        <i class="fas fa-video text-green-400 text-xl"></i>
+        <h1 class="cyber-font text-xl font-bold tracking-wider text-white">
+            <span class="text-green-400">CODING</span>MASTERS
+        </h1>
+    </div>
+
+    {% include "partials/navbar.html" %}
+
+</header>
+
+
+<!-- SUMMARY BAR -->
+<div class="bg-slate-900 border-b border-slate-700 px-6 py-2 flex gap-6 text-sm flex-shrink-0">
+    <div>Total Cameras: <span class="text-green-400 font-bold">6</span></div>
+    <div>Online: <span class="text-green-400 font-bold">1</span></div>
+    <div>Total Vehicles: <span id="total-vehicles" class="text-white font-bold">0</span></div>
+    <div>Alerts: <span id="total-alerts" class="text-red-400 font-bold">0</span></div>
+</div>
+
+<!-- CAMERA GRID 2×3 -->
+<main class="flex-1 min-h-0 p-4 grid grid-cols-3 grid-rows-2 gap-4 items-stretch">
+
+    <!-- CAM 01 REAL -->
+    <div class="cam-card cursor-pointer flex flex-col"
+        onclick="openCamera('CAM_01_TOLL_GATE')">
+
+        <div class="cam-label">
+            <span class="cam-status online">CAM_01_TOLL_GATE</span>
+        </div>
+
+        <div class="flex-1 overflow-hidden min-h-0">
+            <img src="{% url 'video_feed' %}" class="w-full h-full object-cover block">
+        </div>
+
+        <div class="cam-footer">
+            <span>Vehicles: <span id="cam1-count">0</span></span>
+            <span class="text-green-400">LIVE</span>
+        </div>
+    </div>
+
+    <!-- CAM 02 -->
+<div class="cam-card flex flex-col">
+    <div class="cam-label">
+        <span class="cam-status offline">CAM_02_HIGHWAY</span>
+    </div>
+    <div class="flex-1 overflow-hidden min-h-0">
+        <video class="w-full h-full object-cover opacity-80" autoplay muted loop>
+            <source src="{% static 'videos/cam2.mp4' %}" type="video/mp4">
+        </video>
+    </div>
+    <div class="cam-footer">
+        <span>Vehicles: 0</span>
+        <span class="text-slate-400">SIM</span>
+    </div>
+</div>
+
+<!-- CAM 03 -->
+<div class="cam-card flex flex-col">
+    <div class="cam-label">
+        <span class="cam-status offline">CAM_02_HIGHWAY</span>
+    </div>
+    <div class="flex-1 overflow-hidden min-h-0">
+        <video class="w-full h-full object-cover opacity-80" autoplay muted loop>
+            <source src="{% static 'videos/cam3_1.mp4' %}" type="video/mp4">
+        </video>
+    </div>
+    <div class="cam-footer">
+        <span>Vehicles: 0</span>
+        <span class="text-slate-400">SIM</span>
+    </div>
+</div>
+
+<!-- CAM 04 -->
+<div class="cam-card flex flex-col">
+    <div class="cam-label">
+        <span class="cam-status offline">CAM_02_HIGHWAY</span>
+    </div>
+    <div class="flex-1 overflow-hidden min-h-0">
+        <video class="w-full h-full object-cover opacity-80" autoplay muted loop>
+            <source src="{% static 'videos/cam4.mp4' %}" type="video/mp4">
+        </video>
+    </div>
+    <div class="cam-footer">
+        <span>Vehicles: 0</span>
+        <span class="text-slate-400">SIM</span>
+    </div>
+</div>
+
+<!-- CAM 05 -->
+<div class="cam-card flex flex-col">
+    <div class="cam-label">
+        <span class="cam-status offline">CAM_02_HIGHWAY</span>
+    </div>
+    <div class="flex-1 overflow-hidden min-h-0">
+        <video class="w-full h-full object-cover opacity-80" autoplay muted loop>
+            <source src="{% static 'videos/cam5.mp4' %}" type="video/mp4">
+        </video>
+    </div>
+    <div class="cam-footer">
+        <span>Vehicles: 0</span>
+        <span class="text-slate-400">SIM</span>
+    </div>
+</div>
+
+    <!-- CAM 06 -->
+<div class="cam-card flex flex-col">
+    <div class="cam-label">
+        <span class="cam-status offline">CAM_02_HIGHWAY</span>
+    </div>
+    <div class="flex-1 overflow-hidden min-h-0">
+        <video class="w-full h-full object-cover opacity-80" autoplay muted loop>
+            <source src="{% static 'videos/cam6_1.mp4' %}" type="video/mp4">
+        </video>
+    </div>
+    <div class="cam-footer">
+        <span>Vehicles: 0</span>
+        <span class="text-slate-400">SIM</span>
+    </div>
+</div>
+
+</main>
+
+<script>
+
+
+
+const btnNight = document.getElementById("btn-nightday");
+const btnDefog = document.getElementById("btn-defog");
+const btnDerain = document.getElementById("btn-derain");
+
+let state = {
+    nightday:false,
+    defog:false,
+    derain:false
+};
+
+/* Manual toggles */
+btnDefog?.addEventListener("change",()=>{
+    state.defog = btnDefog.checked;
+    console.log("DEFOG:", state.defog);
+});
+
+btnDerain?.addEventListener("change",()=>{
+    state.derain = btnDerain.checked;
+    console.log("DERAIN:", state.derain);
+});
+
+/* Auto Night Mode */
+function checkNightMode(){
+    const hour = new Date().getHours();
+    const isNight = (hour >= 18 || hour < 6);
+
+    if(btnNight){
+        btnNight.checked = isNight;
+        state.nightday = isNight;
+    }
+}
+
+checkNightMode();
+setInterval(checkNightMode,60000);
+
+
+// clock
+setInterval(()=>{
+    document.getElementById("clock").innerText =
+        new Date().toLocaleTimeString();
+},1000);
+
+
+
+
+// open CAM → command dashboard
+function openCamera(camId){
+    window.location.href = `/dashboard/?cam=${camId}`;
+}
+
+// OPTIONAL: live vehicle count sync from backend
+async function syncStats(){
+    try{
+        const r = await fetch("/api/latest/");
+        const j = await r.json();
+        if(!j.vehicles) return;
+
+        document.getElementById("cam1-count").innerText = j.vehicles.length;
+        document.getElementById("total-vehicles").innerText = j.vehicles.length;
+
+    }catch(e){}
+}
+
+setInterval(syncStats,4000);
+</script>
+
+</body>
+</html>

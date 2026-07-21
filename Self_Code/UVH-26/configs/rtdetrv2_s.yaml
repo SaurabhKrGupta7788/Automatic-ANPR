@@ -1,0 +1,228 @@
+# ============================================
+# RT-DETRv2 — Unified Training Config (R18vd/R50vd)
+# ============================================
+
+task: detection
+num_classes: 16
+remap_mscoco_category: false
+
+# -------------------------------
+# Dataset & Evaluation
+# -------------------------------
+evaluator:
+  type: CocoEvaluator
+  iou_types: ["bbox"]
+
+train_dataloader:
+  type: DataLoader
+  dataset:
+    type: CocoDetection
+    img_folder: "/path/to/train/images" # e.g., /data/UVH-26/images/train
+    ann_file: "/path/to/annotations/train.json" # e.g., /data/UVH-26/annotations/instances_train.json
+    return_masks: false
+    transforms:
+      type: Compose
+      ops:
+        - { type: RandomPhotometricDistort, p: 0.5 }
+        - { type: RandomZoomOut, fill: 0 }
+        - { type: RandomIoUCrop, p: 0.8 }
+        - { type: SanitizeBoundingBoxes, min_size: 1 }
+        - { type: RandomHorizontalFlip }
+        - { type: Resize, size: [640, 640] }
+        - { type: SanitizeBoundingBoxes, min_size: 1 }
+        - { type: ConvertPILImage, dtype: "float32", scale: true }
+        - { type: ConvertBoxes, fmt: "cxcywh", normalize: true }
+      policy: # stop heavy augs late
+        name: stop_epoch
+        epoch: 151
+        ops: ["RandomPhotometricDistort", "RandomZoomOut", "RandomIoUCrop"]
+  shuffle: true
+  total_batch_size: 16 # global batch (sum across GPUs)
+  num_workers: 8
+  drop_last: true
+  collate_fn:
+    type: BatchImageCollateFuncion
+    scales: [480, 512, 544, 576, 608, 640, 640, 640, 672, 704, 736, 768, 800]
+    stop_epoch: 151
+
+val_dataloader:
+  type: DataLoader
+  dataset:
+    type: CocoDetection
+    return_masks: false
+    transforms:
+      type: Compose
+      ops:
+        - { type: Resize, size: [640, 640] }
+        - { type: ConvertPILImage, dtype: "float32", scale: true }
+  shuffle: false
+  total_batch_size: 32
+  num_workers: 8
+  drop_last: false
+  collate_fn:
+    type: BatchImageCollateFuncion
+
+# -------------------------------
+# Training runtime
+# -------------------------------
+output_dir: "/path/to/output_dir" # e.g., ./output/rtdetrv2_uvh26
+epoches: 152 # r18vd can override to 150 below
+clip_max_norm: 0.1
+use_amp: true
+
+use_ema: true
+ema:
+  type: ModelEMA
+  decay: 0.9999
+  warmups: 2000
+
+# -------------------------------
+# Optimizer & LR schedules (merged)
+# -------------------------------
+optimizer:
+  type: AdamW
+  params:
+    - params: "^(?=.*backbone)(?!.*norm|bn).*$" # backbone (exclude norm/bn)
+      lr: 0.00001
+    - params: "^(?=.*(?:encoder|decoder))(?=.*(?:norm|bn)).*$" # enc/dec norms
+      weight_decay: 0.0
+  lr: 0.0001
+  betas: [0.9, 0.999]
+  weight_decay: 0.0001
+
+lr_scheduler:
+  type: MultiStepLR
+  milestones: [1000]
+  gamma: 0.1
+
+lr_warmup_scheduler:
+  type: LinearWarmup
+  warmup_duration: 2000
+
+# -------------------------------
+# Model & Criterion
+# -------------------------------
+model: RTDETR
+criterion: RTDETRCriterionv2
+postprocessor: RTDETRPostProcessor
+
+use_focal_loss: true
+eval_spatial_size: [640, 640] # (h, w)
+
+RTDETR:
+  backbone: PResNet
+  encoder: HybridEncoder
+  decoder: RTDETRTransformerv2
+
+RTDETRPostProcessor:
+  num_top_queries: 300
+
+RTDETRCriterionv2:
+  weight_dict: { loss_vfl: 1, loss_bbox: 5, loss_giou: 2 }
+  losses: ["vfl", "boxes"]
+  alpha: 0.75
+  gamma: 2.0
+  matcher:
+    type: HungarianMatcher
+    weight_dict: { cost_class: 2, cost_bbox: 5, cost_giou: 2 }
+    alpha: 0.25
+    gamma: 2.0
+
+# -------------------------------
+# Active variant selection
+# -------------------------------
+active_model_variant: r18vd # choose: [r18vd, r50vd]
+
+# -------------------------------
+# Model variants (override blocks)
+# -------------------------------
+model_variants:
+  # ---------- ResNet-18vd (your lightweight config) ----------
+  r18vd:
+    # Optional training overrides for this variant
+    overrides:
+      epoches: 150
+      train_dataloader:
+        collate_fn:
+          scales: null # disable multiscale if you want the leanest setup
+        dataset:
+          transforms:
+            policy:
+              epoch: 150 # align with epoches
+    PResNet:
+      depth: 18
+      variant: d
+      freeze_at: -1
+      return_idx: [1, 2, 3] # (if your code expects these; else omit)
+      num_stages: 4
+      freeze_norm: false
+      pretrained: true
+    HybridEncoder:
+      in_channels: [128, 256, 512]
+      feat_strides: [8, 16, 32]
+      # intra
+      hidden_dim: 256
+      use_encoder_idx: [2]
+      num_encoder_layers: 1
+      nhead: 8
+      dim_feedforward: 1024
+      dropout: 0.0
+      enc_act: "gelu"
+      # cross
+      expansion: 0.5 # narrower head vs R50
+      depth_mult: 1
+      act: "silu"
+    RTDETRTransformerv2:
+      feat_channels: [256, 256, 256]
+      feat_strides: [8, 16, 32]
+      hidden_dim: 256
+      num_levels: 3
+      num_layers: 3 # <— shallower transformer per your snippet
+      num_queries: 300
+      num_denoising: 100
+      label_noise_ratio: 0.5
+      box_noise_scale: 1.0
+      eval_idx: -1
+      num_points: [4, 4, 4]
+      cross_attn_method: default
+      query_select_method: default
+
+  # ---------- ResNet-50vd (baseline you included) ----------
+  r50vd:
+    PResNet:
+      depth: 50
+      variant: d
+      freeze_at: 0
+      return_idx: [1, 2, 3]
+      num_stages: 4
+      freeze_norm: true
+      pretrained: true
+    HybridEncoder:
+      in_channels: [512, 1024, 2048]
+      feat_strides: [8, 16, 32]
+      # intra
+      hidden_dim: 256
+      use_encoder_idx: [2]
+      num_encoder_layers: 1
+      nhead: 8
+      dim_feedforward: 1024
+      dropout: 0.0
+      enc_act: "gelu"
+      # cross
+      expansion: 1.0
+      depth_mult: 1
+      act: "silu"
+    RTDETRTransformerv2:
+      feat_channels: [256, 256, 256]
+      feat_strides: [8, 16, 32]
+      hidden_dim: 256
+      num_levels: 3
+      num_layers: 6
+      num_queries: 300
+      num_denoising: 100
+      label_noise_ratio: 0.5
+      box_noise_scale: 1.0
+      eval_idx: -1
+      num_points: [4, 4, 4]
+      cross_attn_method: default
+      query_select_method: default

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CODING MASTERS | ANPR GATEWAY</title>
+    
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap');
+        
+        /* --- CORE STYLES --- */
+        body { 
+            margin: 0; 
+            font-family: 'Rajdhani', sans-serif; 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 70%);
+        }
+
+        .cyber-font { font-family: 'Orbitron', sans-serif; }
+        .text-neon { color: #4ade80; text-shadow: 0 0 10px rgba(74, 222, 128, 0.5); }
+        .border-neon { border-color: #4ade80; box-shadow: 0 0 10px rgba(74, 222, 128, 0.3), inset 0 0 10px rgba(74, 222, 128, 0.1); }
+        
+        /* --- BACKGROUND GRID EFFECTS --- */
+        .bg-grid {
+            position: absolute;
+            inset: 0;
+            background-size: 50px 50px;
+            background-image: 
+                linear-gradient(to right, rgba(51, 65, 85, 0.2) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(51, 65, 85, 0.2) 1px, transparent 1px);
+            mask-image: linear-gradient(to bottom, transparent, black, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black, transparent);
+            z-index: -1;
+            transform: perspective(500px) rotateX(60deg) translateY(-100px) translateZ(-200px);
+            animation: grid-move 5s linear infinite;
+        }
+
+        @keyframes grid-move {
+            0% { transform: perspective(500px) rotateX(60deg) translateY(0) translateZ(-200px); }
+            100% { transform: perspective(500px) rotateX(60deg) translateY(50px) translateZ(-200px); }
+        }
+
+        /* --- THE DETECTION ANIMATION SCENE --- */
+        .scene-container {
+            position: relative;
+            width: 100%;
+            height: 350px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* 1. The Car */
+        .anim-car {
+            position: absolute;
+            bottom: 40px;
+            left: -20%;
+            font-size: 5rem;
+            color: #cbd5e1;
+            animation: drive-cycle 6s infinite;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        @keyframes drive-cycle {
+            0% { left: -20%; }
+            35% { left: 45%; } /* Arrives at center */
+            65% { left: 45%; } /* Pauses for detection */
+            100% { left: 120%; } /* Drives off */
+        }
+
+        /* 2. The Camera */
+        .anim-camera {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            font-size: 2.5rem;
+            color: #64748b;
+            transform: rotate(-15deg);
+        }
+
+        /* 3. The Scanning Laser Cone */
+        .laser-cone {
+            position: absolute;
+            top: 60px;
+            right: 45px;
+            width: 300px;
+            height: 250px;
+            background: linear-gradient(to bottom, rgba(74, 222, 128, 0.3), rgba(74, 222, 128, 0.05));
+            clip-path: polygon(100% 0, 0 100%, 100% 100%);
+            transform-origin: top right;
+            opacity: 0;
+            animation: scan-flash 6s infinite;
+        }
+
+        @keyframes scan-flash {
+            0%, 34% { opacity: 0; }
+            35% { opacity: 1; } /* Camera flashes on */
+            40% { opacity: 0.4; }
+            45% { opacity: 1; }
+            64% { opacity: 1; }
+            65%, 100% { opacity: 0; } /* Camera turns off */
+        }
+
+        /* 4. The Bounding Box & Plate Data */
+        .bounding-box {
+            position: absolute;
+            inset: -10px -20px;
+            border: 2px solid #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+            border-radius: 4px;
+            opacity: 0;
+            transform: scale(1.2);
+            animation: box-detect 6s infinite;
+        }
+
+        .plate-popup {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            border: 1px solid #4ade80;
+            color: #4ade80;
+            padding: 4px 12px;
+            font-size: 14px;
+            border-radius: 4px;
+            white-space: nowrap;
+            box-shadow: 0 0 10px rgba(74, 222, 128, 0.4);
+            opacity: 0;
+            animation: text-reveal 6s infinite;
+        }
+
+        @keyframes box-detect {
+            0%, 40% { opacity: 0; transform: scale(1.2); }
+            42% { opacity: 1; transform: scale(1); } /* Box locks on */
+            63% { opacity: 1; transform: scale(1); }
+            65%, 100% { opacity: 0; transform: scale(1); }
+        }
+
+        @keyframes text-reveal {
+            0%, 44% { opacity: 0; transform: translate(-50%, 10px); }
+            46% { opacity: 1; transform: translate(-50%, 0); } /* Text pops up */
+            63% { opacity: 1; transform: translate(-50%, 0); }
+            65%, 100% { opacity: 0; transform: translate(-50%, -10px); }
+        }
+
+        /* Buttons */
+        .btn-cyber {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .btn-cyber::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        .btn-cyber:hover::before { left: 100%; }
+        .btn-cyber:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(74, 222, 128, 0.3); }
+
+
+
+        main > * {
+  max-height: 100%;
+}
+
+    </style>
+</head>
+<body class="h-screen flex flex-col relative overflow-hidden">
+
+    <!-- Grid Background -->
+    <div class="bg-grid"></div>
+
+    <!-- HEADER NAVIGATION -->
+    <header class="h-20 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md flex items-center justify-between px-8 z-10">
+        <div class="flex items-center gap-3">
+            <i class="fas fa-shield-alt text-neon text-3xl"></i>
+            <h1 class="cyber-font text-2xl md:text-3xl font-bold tracking-widest text-white">
+                <span class="text-green-400">CODING</span>MASTERS
+            </h1>
+        </div>
+        
+    {% include "partials/navbar.html" %}
+
+        <div class="flex items-center gap-4">
+            <div class="hidden lg:flex items-center gap-2 text-xs font-mono bg-slate-800 px-3 py-1 rounded border border-slate-700">
+                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                SYSTEM ONLINE
+            </div>
+            <!-- Mobile Menu Icon -->
+            <button class="md:hidden text-2xl text-slate-300 hover:text-green-400">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN HERO SECTION -->
+    <main class="flex-1 flex flex-col lg:flex-row items-center justify-center px-8 lg:px-16 py-8 gap-12 min-h-0">
+        
+        <!-- Left Content -->
+        <div class="w-full lg:w-1/2 space-y-8 text-center lg:text-left">
+            <div class="inline-block border border-green-500/50 bg-green-500/10 text-green-400 cyber-font px-4 py-1 rounded-full text-sm font-bold tracking-widest mb-2">
+                v2.0 • AI NEURAL NET ACTIVE
+            </div>
+            
+            <h2 class="text-5xl lg:text-7xl font-bold cyber-font leading-tight">
+                NEXT-GEN <br>
+                <span class="text-neon">ANPR</span> SYSTEM
+            </h2>
+            
+            <p class="text-slate-400 text-lg lg:text-xl max-w-xl mx-auto lg:mx-0">
+                Empower your security infrastructure with state-of-the-art YOLO object tracking, PaddleOCR plate recognition, and real-time GAN defogging.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
+                <!-- Connects to your Master Dashboard -->
+                <a href="{% url 'multicamera_dashboard' %}" class="btn-cyber bg-green-600 text-black px-8 py-4 cyber-font font-bold text-lg rounded text-center tracking-wider">
+                    <i class="fas fa-power-off mr-2"></i> LAUNCH DASHBOARD
+                </a>
+                <!-- Connects to Forensics/Logs -->
+                <a href="{% url 'forensic_dashboard' %}" class="btn-cyber border border-green-500 text-green-400 hover:bg-green-500/10 px-8 py-4 cyber-font font-bold text-lg rounded text-center tracking-wider">
+                    <i class="fas fa-database mr-2"></i> FORENSICS
+                </a>
+            </div>
+        </div>
+
+        <!-- Right Content: The Detection Animation -->
+        <div class="w-full lg:w-1/2 max-w-2xl">
+            <div class="scene-container border-neon">
+                
+                <!-- Stylized Road Lines -->
+                <div class="absolute bottom-10 left-0 w-full border-b-2 border-dashed border-slate-600 opacity-50"></div>
+                
+                <!-- The Camera -->
+                <div class="anim-camera">
+                    <i class="fas fa-video"></i>
+                </div>
+                
+                <!-- The Laser Cone -->
+                <div class="laser-cone"></div>
+
+                <!-- The Animated Car -->
+                <div class="anim-car">
+                    <div class="bounding-box">
+                        <div class="plate-popup cyber-font">
+                            <i class="fas fa-check-circle mr-1"></i> DL 01 AB 1234
+                        </div>
+                    </div>
+                    <i class="fas fa-car-side"></i>
+                    
+                    <!-- Car Shadow -->
+                    <div class="absolute -bottom-2 w-32 h-2 bg-black/60 rounded-[100%] blur-sm"></div>
+                </div>
+
+                <!-- HUD Overlay Elements -->
+                <div class="absolute top-4 left-4 text-xs font-mono text-green-500/70">
+                    <div>[NODE_01_ACTIVE]</div>
+                    <div>FPS: 60.02</div>
+                    <div>AWAITING_TARGET...</div>
+                </div>
+                <div class="absolute bottom-4 right-4 text-xs font-mono text-slate-500">
+                    CODING_MASTERS_ENGINE
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- BOTTOM DYNAMIC STATS BAR -->
+    <footer class="border-t border-slate-800 bg-slate-900/90 py-6 px-8 shrink-0">
+        <div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            
+            <div>
+                <div class="text-3xl font-bold cyber-font text-white mb-1"><span id="stat-accuracy" class="text-neon">0</span>%</div>
+                <div class="text-xs text-slate-500 uppercase tracking-widest font-bold">OCR Accuracy</div>
+            </div>
+            
+            <div>
+                <div class="text-3xl font-bold cyber-font text-white mb-1"><span id="stat-speed" class="text-neon">0</span>ms</div>
+                <div class="text-xs text-slate-500 uppercase tracking-widest font-bold">Processing Time</div>
+            </div>
+            
+            <div>
+                <div class="text-3xl font-bold cyber-font text-white mb-1"><span id="stat-vehicles" class="text-neon">0</span>+</div>
+                <div class="text-xs text-slate-500 uppercase tracking-widest font-bold">Plates Logged</div>
+            </div>
+            
+            <div>
+                <div class="text-3xl font-bold cyber-font text-white mb-1"><span class="text-neon">4</span></div>
+                <div class="text-xs text-slate-500 uppercase tracking-widest font-bold">Active Cameras</div>
+            </div>
+
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT FOR DYNAMIC STAT COUNTERS -->
+    <script>
+        // Function to animate numbers counting up
+        function animateValue(id, start, end, duration, decimal = false) {
+            if (start === end) return;
+            var range = end - start;
+            var current = start;
+            var increment = end > start? 1 : -1;
+            var stepTime = Math.abs(Math.floor(duration / range));
+            var obj = document.getElementById(id);
+            var timer = setInterval(function() {
+                current += increment;
+                if(decimal) {
+                    obj.innerHTML = (current / 10).toFixed(1); // Fake decimal logic
+                } else {
+                    obj.innerHTML = current;
+                }
+                if (current == end) {
+                    clearInterval(timer);
+                    if(decimal) obj.innerHTML = (end/10).toFixed(1);
+                }
+            }, stepTime);
+        }
+
+        // Trigger animations when page loads
+        window.onload = function() {
+            // Count Accuracy to 98.5% (represented as 985 internally)
+            animateValue("stat-accuracy", 0, 985, 2000, true);
+            // Count Speed to 45ms
+            animateValue("stat-speed", 0, 45, 2000, false);
+            // Count Vehicles to 12450
+            animateValue("stat-vehicles", 0, 1245, 2500, false); // counting in 10s roughly
+            
+            setTimeout(() => {
+                document.getElementById('stat-vehicles').innerHTML = "12,450";
+            }, 2500);
+        };
+    </script>
+</body>
+</html>

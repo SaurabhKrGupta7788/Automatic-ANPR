@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CODING MASTERS | ANPR COMMAND</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    {% load static %}
+ 
+    
+    <style>
+
+        
+
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap');
+
+        body { font-family: 'Rajdhani', sans-serif; }
+        .cyber-font { font-family: 'Orbitron', sans-serif; }
+
+        /* Laser Animation */
+        .scanner-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: #4ade80;
+            box-shadow: 0 0 10px #4ade80, 0 0 20px #4ade80;
+            animation: scan 2s linear infinite;
+        }
+        @keyframes scan {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        .neon-border { box-shadow: 0 0 5px rgba(74, 222, 128, 0.3); }
+        .slide-in { animation: slideIn 0.5s ease-out; }
+        @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Toggle Switch */
+        .switch {
+        position: relative;
+        display: inline-block;
+        width: 38px;
+        height: 18px;
+        }
+
+        .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        }
+
+        .slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background: #1e293b;
+        border: 1px solid #475569;
+        border-radius: 20px;
+        transition: .25s;
+        }
+
+        .slider:before {
+        content: "";
+        position: absolute;
+        height: 14px;
+        width: 14px;
+        left: 2px;
+        top: 1px;
+        background: #94a3b8;
+        border-radius: 50%;
+        transition: .25s;
+        }
+
+        .switch input:checked + .slider {
+        background: rgba(34,197,94,.15);
+        border-color: #22c55e;
+        box-shadow: 0 0 6px rgba(34,197,94,.6);
+        }
+
+        .switch input:checked + .slider:before {
+        transform: translateX(18px);
+        background: #22c55e;
+        }
+
+        .nav-label{
+        font-size:11px;
+        color:#94a3b8;
+        margin-right:6px;
+        }
+
+
+    </style>
+</head>
+<body class="text-slate-200 h-screen flex flex-col bg-slate-900 overflow-hidden">
+
+    <!-- HEADER -->
+    <header class="h-16 bg-slate-900 border-b border-slate-700 flex items-center justify-between px-6 shadow-lg z-10">
+        <div class="flex items-center gap-3">
+            <i class="fas fa-shield-alt text-green-400 text-2xl"></i>
+            <h1 class="cyber-font text-2xl font-bold tracking-wider text-white">
+                <span class="text-green-400">CODING</span>MASTERS
+            </h1>
+        </div>
+       <div class="flex items-center gap-6">
+    <!-- Connection Status Badge -->
+    <div id="connection-status" class="hidden px-3 py-1 border rounded text-xs font-bold uppercase tracking-wider">
+        <!-- JS will populate this -->
+    </div>
+
+    <div id="weather-badge" class="hidden px-3 py-1 bg-blue-900/50 border border-blue-500 rounded text-blue-300 text-sm font-bold animate-pulse">
+        <i class="fas fa-cloud-moon-rain mr-2"></i> GAN DEFOG: ACTIVE
+    </div>
+
+    {% include "partials/navbar.html" %}
+
+
+    </header>
+
+    <!-- MAIN GRID -->
+    <main class="flex-1 grid grid-cols-12 gap-4 p-4 min-h-0">
+        
+        <!-- VIDEO FEED (Left - 8 cols) -->
+        <div class="col-span-8 relative bg-black rounded-lg border border-slate-700 overflow-hidden group">
+            <div class="absolute top-4 left-4 z-10 bg-black/60 px-2 py-1 rounded text-red-500 font-bold text-xs animate-pulse">
+                <i class="fas fa-circle text-[8px] mr-1 align-middle"></i> LIVE FEED: {{ camera_id }}
+            </div>
+            
+            <!-- DJANGO VIDEO FEED SOURCE -->
+            <img src="{% url 'video_feed' %}" 
+                 class="w-full h-full object-cover opacity-90" 
+                 alt="Live Feed"
+                 onerror="this.src='https://images.unsplash.com/photo-1565514020175-0c2235be9eb2?q=80&w=2070&auto=format&fit=crop'; this.style.opacity='0.5';">
+            
+            <!-- ROI Scanner Overlay -->
+            <div class="absolute inset-0 pointer-events-none">
+                <div class="w-[80%] h-[60%] border-2 border-green-500/30 absolute top-[20%] left-[10%] rounded"></div>
+                <div class="scanner-line top-[20%]"></div>
+            </div>
+        </div>
+
+        <!-- INSPECTOR PANEL (Right - 4 cols) -->
+        <div class="col-span-4 flex flex-col gap-4">
+            
+            <!-- Latest Capture Card -->
+            <div class="bg-slate-800/50 border border-slate-700 rounded-lg p-4 flex-1 neon-border">
+                <h2 class="cyber-font text-green-400 text-lg mb-4 border-b border-slate-700 pb-2">
+                    <i class="fas fa-search-location mr-2"></i> INSPECTOR
+                </h2>
+
+                <div class="space-y-4">
+                    <!-- Car Snapshot -->
+                    <div class="h-32 bg-black rounded border border-slate-600 flex items-center justify-center overflow-hidden relative">
+                        <img id="insp-img" src="" class="hidden w-full h-full object-cover">
+                        <span id="insp-placeholder" class="text-slate-600 text-xs">AWAITING TARGET...</span>
+                    </div>
+
+                    <!-- Auto-Fill Form -->
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs text-slate-500 uppercase">Detected Plate</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="insp-plate" 
+                                    class="w-full bg-slate-900 border border-green-500/50 text-green-400 font-mono text-xl font-bold px-3 py-2 rounded focus:outline-none focus:border-green-400"
+                                    placeholder="--- -- --" value="">
+                                <button class="bg-green-600 hover:bg-green-500 text-black font-bold px-3 rounded shadow-lg shadow-green-500/20">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs text-slate-500 uppercase">Type</label>
+                                <input type="text" id="insp-type" class="w-full bg-slate-900 border border-slate-700 text-slate-300 px-3 py-1 rounded" readonly>
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-500 uppercase">Color</label>
+                                <input type="text" id="insp-color" class="w-full bg-slate-900 border border-slate-700 text-slate-300 px-3 py-1 rounded" readonly>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-xs text-slate-500 uppercase">Confidence</label>
+                            <div class="w-full bg-slate-900 rounded-full h-2 mt-1">
+                                <div id="insp-conf-bar" class="bg-green-500 h-2 rounded-full" style="width: 0%"></div>
+                            </div>
+                            <div class="text-right text-xs text-slate-400 mt-1" id="insp-conf-text">0%</div>
+                            <div id="insp-novehicle" class="text-xs mt-1 font-bold"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Mini -->
+            <div class="h-24 grid grid-cols-2 gap-2">
+                <div class="bg-slate-800 rounded border border-slate-700 p-3 flex flex-col justify-center items-center">
+                    <span class="text-3xl font-bold text-white cyber-font" id="count-total">0</span>
+                    <span class="text-xs text-slate-400 uppercase">Vehicles Today</span>
+                </div>
+                <div class="bg-slate-800 rounded border border-slate-700 p-3 flex flex-col justify-center items-center">
+                    <span id="alerts" class="text-3xl font-bold text-red-400 cyber-font">0</span>
+                    <span class="text-xs text-slate-400 uppercase">Alerts</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- BOTTOM TICKER -->
+    <footer class="h-32 bg-slate-900 border-t border-slate-700 p-2 overflow-x-auto whitespace-nowrap" id="journey-ticker">
+        <!-- Cards will be injected here via JS -->
+    </footer>
+
+    <script>
+
+// Clock
+setInterval(()=>{
+    document.getElementById('clock').innerText =
+        new Date().toLocaleTimeString();
+},1000);
+
+
+// DOM refs
+const ticker       = document.getElementById('journey-ticker');
+const inspPlate    = document.getElementById('insp-plate');
+const inspType     = document.getElementById('insp-type');
+const inspColor    = document.getElementById('insp-color');
+const inspConfBar  = document.getElementById('insp-conf-bar');
+const inspConfText = document.getElementById('insp-conf-text');
+const inspImg      = document.getElementById('insp-img');
+const inspPlaceholder = document.getElementById('insp-placeholder');
+const statusEl     = document.getElementById('connection-status');
+
+const MAX_TICKER_ITEMS = 10;
+
+
+const btnNight = document.getElementById("btn-nightday");
+const btnDefog = document.getElementById("btn-defog");
+const btnDerain = document.getElementById("btn-derain");
+
+let state = {
+    nightday:false,
+    defog:false,
+    derain:false
+};
+
+/* Manual toggles */
+btnDefog?.addEventListener("change",()=>{
+    state.defog = btnDefog.checked;
+    console.log("DEFOG:", state.defog);
+});
+
+btnDerain?.addEventListener("change",()=>{
+    state.derain = btnDerain.checked;
+    console.log("DERAIN:", state.derain);
+});
+
+/* Auto Night Mode */
+function checkNightMode(){
+    const hour = new Date().getHours();
+    const isNight = (hour >= 18 || hour < 6);
+
+    if(btnNight){
+        btnNight.checked = isNight;
+        state.nightday = isNight;
+    }
+}
+
+checkNightMode();
+setInterval(checkNightMode,60000);
+
+
+
+// Render ticker card
+function createTickerCard(vehicle){
+    const time = new Date(vehicle.timestamp)
+        .toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+
+    const card = document.createElement('div');
+    card.className =
+        "inline-block w-64 h-full bg-slate-800 border border-slate-600 rounded mr-3 p-3 slide-in relative overflow-hidden align-top flex-shrink-0";
+
+    card.innerHTML = `
+        <div class="text-xs text-slate-400 mb-1">${time} | ${vehicle.plate}</div>
+        <div class="text-base font-bold text-white">${vehicle.vehicle_type} • ${vehicle.color}</div>
+        <div class="absolute bottom-2 right-2 text-xs bg-slate-700 px-1.5 py-0.5 rounded">
+            ${Number(vehicle.confidence || 0).toFixed(0)}%
+        </div>
+    `;
+
+    card.onclick = ()=>loadIntoInspector(vehicle);
+    return card;
+}
+
+
+// Inspector fill
+function loadIntoInspector(v){
+    inspPlate.value = v.plate || "—";
+    inspType.value  = v.vehicle_type || "—";
+    inspColor.value = v.color || "—";
+
+    const conf = Number(v.confidence || 0);
+    inspConfBar.style.width = conf + "%";
+    inspConfText.textContent = conf.toFixed(1) + "%";
+
+    if(v.snapshot_url){
+        inspImg.src = v.snapshot_url;
+        inspImg.classList.remove('hidden');
+        inspPlaceholder.classList.add('hidden');
+    }else{
+        inspImg.classList.add('hidden');
+        inspPlaceholder.classList.remove('hidden');
+    }
+
+
+    const nv = document.getElementById("insp-novehicle");
+
+    if(v.is_violation){
+        nv.innerHTML = "🚫 NO-VEHICLE DAY VIOLATION (" + v.no_vehicle_day + ")";
+        nv.className = "text-red-400 text-xs font-bold mt-1 animate-pulse";
+        new Audio("/static/sounds/alert.mp3").play();
+    }else{
+        nv.innerHTML = "Allowed today (Ban: " + (v.no_vehicle_day || "-") + ")";
+        nv.className = "text-green-400 text-xs mt-1";
+    }
+
+
+}
+
+
+// Add ticker
+function addToTicker(vehicle){
+    const card = createTickerCard(vehicle);
+    ticker.prepend(card);
+
+    while(ticker.children.length > MAX_TICKER_ITEMS){
+        ticker.removeChild(ticker.lastChild);
+    }
+
+    loadIntoInspector(vehicle);
+}
+
+
+// Load DB initial
+async function loadInitialData(){
+    try{
+        const r = await fetch('/api/latest/');
+        if(!r.ok) return;
+
+        const j = await r.json();
+        ticker.innerHTML = "";
+
+        j.vehicles.forEach(v=>addToTicker(v));
+
+        if(j.vehicles.length){
+            loadIntoInspector(j.vehicles[0]);
+        }
+    }catch(e){
+        console.warn("Initial load failed", e);
+    }
+}
+
+
+// WebSocket
+function connectWebSocket(){
+
+    const protocol = location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const cam = "{{ camera_id }}";
+    const url = protocol + location.host + '/ws/dashboard/?cam=' + cam;
+
+    let ws;
+
+    try{
+        ws = new WebSocket(url);
+    }catch(e){
+        console.error("WS create failed", e);
+        return;
+    }
+
+    ws.onopen = ()=>{
+        statusEl.textContent = "CONNECTED";
+        statusEl.classList.remove('hidden');
+        statusEl.classList.add('text-green-400');
+    };
+
+    ws.onmessage = (ev)=>{
+        try{
+            const data = JSON.parse(ev.data);
+            const vehicle = data.message || data;
+            addToTicker(vehicle);
+        }catch(e){
+            console.error("WS parse error", e);
+        }
+    };
+
+    ws.onerror = ()=>{};
+    ws.onclose = ()=>{
+        setTimeout(connectWebSocket, 3000);
+    };
+}
+
+
+// DB safety sync
+async function syncLatestFromDB(){
+    try{
+        const r = await fetch('/api/latest/');
+        if(!r.ok) return;
+
+        const j = await r.json();
+        if(!j.vehicles?.length) return;
+
+        const newest = j.vehicles[0];
+        if(inspPlate.value === newest.plate) return;
+
+        addToTicker(newest);
+
+    }catch{}
+}
+
+async function loadTodayStats(){
+    try{
+        const r = await fetch("/api/today_stats/");
+        if(!r.ok) return;
+
+        const j = await r.json();
+
+        document.getElementById("count-total").innerText = j.total;
+        document.querySelectorAll("#alerts")[0].innerText = j.alerts;
+
+    }catch(e){}
+}
+
+// start
+window.addEventListener('load',()=>{
+    loadInitialData();
+    connectWebSocket();
+    loadTodayStats();
+    setInterval(syncLatestFromDB, 5000);
+    setInterval(loadTodayStats, 10000);
+});
+
+</script>
+</body>
+</html>

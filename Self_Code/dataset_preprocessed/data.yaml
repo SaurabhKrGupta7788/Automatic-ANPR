@@ -1,0 +1,9 @@
+# ===== YOLOv8 Data Configuration (Preprocessed Images) =====
+
+path: D:\Automatic ANPR\Self_Code\dataset_preprocessed
+
+train: images/train
+val: images/val
+
+names:
+  0: license_plate
